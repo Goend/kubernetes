@@ -262,6 +262,8 @@ var (
 		"NodeStatusMaxImages",
 		"NodeStatusUpdateFrequency.Duration",
 		"NodeStatusReportFrequency.Duration",
+		"NodeLeaseDurationSeconds",
+		"ImageGCWhitelist[*]",
 		"OOMScoreAdj",
 		"PodCIDR",
 		"PodPidsLimit",

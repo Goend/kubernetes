@@ -98,6 +98,9 @@ type ImageGCPolicy struct {
 	// Currently gated by MaximumImageGCAge feature gate and Kubelet configuration.
 	// If 0, the feature is disabled.
 	MaxAge time.Duration
+
+	//images in whitelist will be ignored by garbagecollection
+	ImageGCWhitelist []string
 }
 
 type realImageGCManager struct {
@@ -236,6 +239,16 @@ func (im *realImageGCManager) detectImages(ctx context.Context, detectTime time.
 	isRuntimeClassInImageCriAPIEnabled := utilfeature.DefaultFeatureGate.Enabled(features.RuntimeClassInImageCriAPI)
 	imagesInUse := sets.New[string]()
 
+	// Add whitelistImage in imageInUse if local storage has whitelistImage
+	for _, whitelistImage := range im.policy.ImageGCWhitelist {
+		whitelistImageID, err := im.runtime.GetImageRef(ctx, container.ImageSpec{Image: whitelistImage})
+		if err == nil && whitelistImageID != "" {
+			klog.V(5).Infof("Add whitelistImage %s,imageid: %s in imageinuse ", whitelistImage, whitelistImageID)
+			imagesInUse.Insert(whitelistImageID)
+		} else {
+			klog.V(5).Infof("Skip adding image %s in imageinuse, it is not in local storage", whitelistImage)
+		}
+	}
 	images, err := im.runtime.ListImages(ctx)
 	if err != nil {
 		return imagesInUse, err

@@ -474,6 +474,7 @@ func NewMainKubelet(kubeCfg *kubeletconfiginternal.KubeletConfiguration,
 		MinAge:               kubeCfg.ImageMinimumGCAge.Duration,
 		HighThresholdPercent: int(kubeCfg.ImageGCHighThresholdPercent),
 		LowThresholdPercent:  int(kubeCfg.ImageGCLowThresholdPercent),
+		ImageGCWhitelist:     kubeCfg.ImageGCWhitelist,
 	}
 
 	if utilfeature.DefaultFeatureGate.Enabled(features.ImageMaximumGCAge) {
