@@ -309,6 +309,12 @@ func (m *cgroupCommon) toResources(resourceConfig *ResourceConfig) *libcontainer
 	if !resourceConfig.CPUSet.IsEmpty() {
 		resources.CpusetCpus = resourceConfig.CPUSet.String()
 	}
+	if resourceConfig.CpusetCpus != nil {
+		resources.CpusetCpus = *resourceConfig.CpusetCpus
+	}
+	if resourceConfig.CpusetMems != nil {
+		resources.CpusetMems = *resourceConfig.CpusetMems
+	}
 
 	m.maybeSetHugetlb(resourceConfig, resources)
 

@@ -194,6 +194,8 @@ type NodeAllocatableConfig struct {
 	SystemReservedCgroupName string
 	ReservedSystemCPUs       cpuset.CPUSet
 	EnforceNodeAllocatable   sets.Set[string]
+	KubePodsCpusetCpus       string
+	KubePodsCpusetMems       string
 	KubeReserved             v1.ResourceList
 	SystemReserved           v1.ResourceList
 	HardEvictionThresholds   []evictionapi.Threshold
