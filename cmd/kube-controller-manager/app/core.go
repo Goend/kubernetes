@@ -314,6 +314,14 @@ func startPersistentVolumeAttachDetachController(ctx context.Context, controller
 	}
 
 	ctx = klog.NewContext(ctx, logger)
+	timeConfig := attachdetach.DefaultTimerConfig
+	optionMaxWaitForUnmountDuration := controllerContext.ComponentConfig.AttachDetachController.ReconcilerMaxWaitForUnmountDuration.Duration
+	if optionMaxWaitForUnmountDuration != 0 {
+		if optionMaxWaitForUnmountDuration < time.Minute {
+			return nil, true, fmt.Errorf("MaxWaitForUnmountDuration must be greater than one minute as set via command line option attach-detach-reconcile-max-wait-unmount-duration.")
+		}
+		timeConfig.ReconcilerMaxWaitForUnmountDuration = optionMaxWaitForUnmountDuration
+	}
 	attachDetachController, attachDetachControllerErr :=
 		attachdetach.NewAttachDetachController(
 			ctx,
@@ -330,7 +338,7 @@ func startPersistentVolumeAttachDetachController(ctx context.Context, controller
 			controllerContext.ComponentConfig.AttachDetachController.DisableAttachDetachReconcilerSync,
 			controllerContext.ComponentConfig.AttachDetachController.ReconcilerSyncLoopPeriod.Duration,
 			controllerContext.ComponentConfig.AttachDetachController.DisableForceDetachOnTimeout,
-			attachdetach.DefaultTimerConfig,
+			timeConfig,
 		)
 	if attachDetachControllerErr != nil {
 		return nil, true, fmt.Errorf("failed to start attach/detach controller: %v", attachDetachControllerErr)

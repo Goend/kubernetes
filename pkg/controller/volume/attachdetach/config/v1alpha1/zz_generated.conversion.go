@@ -63,6 +63,7 @@ func autoConvert_v1alpha1_AttachDetachControllerConfiguration_To_config_AttachDe
 	out.DisableAttachDetachReconcilerSync = in.DisableAttachDetachReconcilerSync
 	out.ReconcilerSyncLoopPeriod = in.ReconcilerSyncLoopPeriod
 	out.DisableForceDetachOnTimeout = in.DisableForceDetachOnTimeout
+	out.ReconcilerMaxWaitForUnmountDuration = in.ReconcilerMaxWaitForUnmountDuration
 	return nil
 }
 
@@ -70,6 +71,7 @@ func autoConvert_config_AttachDetachControllerConfiguration_To_v1alpha1_AttachDe
 	out.DisableAttachDetachReconcilerSync = in.DisableAttachDetachReconcilerSync
 	out.ReconcilerSyncLoopPeriod = in.ReconcilerSyncLoopPeriod
 	out.DisableForceDetachOnTimeout = in.DisableForceDetachOnTimeout
+	out.ReconcilerMaxWaitForUnmountDuration = in.ReconcilerMaxWaitForUnmountDuration
 	return nil
 }
 

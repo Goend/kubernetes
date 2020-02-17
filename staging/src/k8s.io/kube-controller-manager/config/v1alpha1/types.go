@@ -183,6 +183,10 @@ type AttachDetachControllerConfiguration struct {
 	// time is exceeded. Is false by default, and thus force detach on unmount is
 	// enabled.
 	DisableForceDetachOnTimeout bool `json:"disableForceDetachOnTimeout"`
+	// ReconcilerMaxWaitForUnmountDuration is the maximum amount of time the
+	// attach detach controller will wait for a volume to be safely unmounted from its node.
+	// Once this time has expired, the controller will assume the node or kubelet are unresponsive and will detach the volume anyway.
+	ReconcilerMaxWaitForUnmountDuration metav1.Duration
 }
 
 // CSRSigningControllerConfiguration contains elements describing CSRSigningController.
