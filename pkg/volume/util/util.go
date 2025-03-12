@@ -26,6 +26,7 @@ import (
 	"time"
 
 	v1 "k8s.io/api/core/v1"
+	storage "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	apiruntime "k8s.io/apimachinery/pkg/runtime"
@@ -33,6 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientset "k8s.io/client-go/kubernetes"
+	storagehelpers "k8s.io/component-helpers/storage/volume"
 	"k8s.io/klog/v2"
 	"k8s.io/kubernetes/pkg/api/legacyscheme"
 	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
@@ -122,6 +124,23 @@ func GetSecretForPV(secretNamespace, secretName, volumePluginName string, kubeCl
 		secret[name] = string(data)
 	}
 	return secret, nil
+}
+
+// GetClassForVolume locates storage class by persistent volume
+func GetClassForVolume(kubeClient clientset.Interface, pv *v1.PersistentVolume) (*storage.StorageClass, error) {
+	if kubeClient == nil {
+		return nil, fmt.Errorf("cannot get kube client")
+	}
+	className := storagehelpers.GetPersistentVolumeClass(pv)
+	if className == "" {
+		return nil, fmt.Errorf("volume has no storage class")
+	}
+
+	class, err := kubeClient.StorageV1().StorageClasses().Get(context.TODO(), className, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return class, nil
 }
 
 // LoadPodFromFile will read, decode, and return a Pod from a file.
@@ -507,6 +526,13 @@ func IsLocalEphemeralVolume(volume v1.Volume) bool {
 	return volume.GitRepo != nil ||
 		(volume.EmptyDir != nil && volume.EmptyDir.Medium == v1.StorageMediumDefault) ||
 		volume.ConfigMap != nil
+}
+
+// GetPluginMountDir returns the global mount directory name appended
+// to the given plugin name's plugin directory
+func GetPluginMountDir(host volume.VolumeHost, name string) string {
+	mntDir := filepath.Join(host.GetPluginDir(name), MountsInGlobalPDPath)
+	return mntDir
 }
 
 // GetPodVolumeNames returns names of volumes that are used in a pod,

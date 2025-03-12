@@ -135,6 +135,14 @@ var defaultVersionedKubernetesFeatureGates = map[featuregate.Feature]featuregate
 		{Version: version.MustParse("1.31"), Default: true, PreRelease: featuregate.Beta}, // On by default (requires Portworx CSI driver)
 	},
 
+	CSIMigrationRBD: {
+		{Version: version.MustParse("1.23"), Default: true, PreRelease: featuregate.Deprecated},
+	},
+
+	InTreePluginRBDUnregister: {
+		{Version: version.MustParse("1.23"), Default: false, PreRelease: featuregate.Deprecated},
+	},
+
 	CSIVolumeHealth: {
 		{Version: version.MustParse("1.21"), Default: false, PreRelease: featuregate.Alpha},
 	},

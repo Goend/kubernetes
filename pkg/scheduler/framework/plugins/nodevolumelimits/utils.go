@@ -49,6 +49,8 @@ func isCSIMigrationOn(csiNode *storagev1.CSINode, pluginName string) bool {
 		return true
 	case csilibplugins.CinderInTreePluginName:
 		return true
+	case csilibplugins.RBDVolumePluginName:
+		return true
 	default:
 		return false
 	}

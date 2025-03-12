@@ -136,6 +136,12 @@ const (
 	// Enables the Portworx in-tree driver to Portworx migration feature.
 	CSIMigrationPortworx featuregate.Feature = "CSIMigrationPortworx"
 
+	// owner: @humblec
+	// alpha: v1.23
+	// deprecated: v1.28
+	//
+	// Enables the RBD in-tree driver to RBD CSI Driver  migration feature.
+	CSIMigrationRBD featuregate.Feature = "CSIMigrationRBD"
 	// owner: @fengzixu
 	//
 	// Enables kubelet to detect CSI volume condition and send the event of the abnormal volume to the corresponding pod that is using it.
@@ -300,6 +306,13 @@ const (
 	//
 	// Disables the Portworx in-tree driver.
 	InTreePluginPortworxUnregister featuregate.Feature = "InTreePluginPortworxUnregister"
+
+	// owner: @humblec
+	// alpha: v1.23
+	// deprecated: v1.28
+	//
+	// Disables the RBD in-tree driver.
+	InTreePluginRBDUnregister featuregate.Feature = "InTreePluginRBDUnregister"
 
 	// owner: @mimowo
 	// kep: https://kep.k8s.io/3850

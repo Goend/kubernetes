@@ -1407,3 +1407,170 @@ func (a *azureFileDriver) PrepareTest(ctx context.Context, f *framework.Framewor
 		Framework: f,
 	}
 }
+
+// Ceph RBD
+type rbdDriver struct {
+	driverInfo storageframework.DriverInfo
+}
+
+type rbdVolume struct {
+	serverPod *v1.Pod
+	serverIP  string
+	secret    *v1.Secret
+	f         *framework.Framework
+}
+
+var _ storageframework.TestDriver = &rbdDriver{}
+var _ storageframework.PreprovisionedVolumeTestDriver = &rbdDriver{}
+var _ storageframework.InlineVolumeTestDriver = &rbdDriver{}
+var _ storageframework.PreprovisionedPVTestDriver = &rbdDriver{}
+
+// InitRbdDriver returns rbdDriver that implements TestDriver interface
+func InitRbdDriver() storageframework.TestDriver {
+	return &rbdDriver{
+		driverInfo: storageframework.DriverInfo{
+			Name:             "rbd",
+			InTreePluginName: "kubernetes.io/rbd",
+			TestTags:         []interface{}{feature.Volumes, framework.WithSerial()},
+			MaxFileSize:      storageframework.FileSizeMedium,
+			SupportedSizeRange: e2evolume.SizeRange{
+				Min: "1Gi",
+			},
+			SupportedFsType: sets.NewString(
+				"", // Default fsType
+				"ext4",
+			),
+			Capabilities: map[storageframework.Capability]bool{
+				storageframework.CapPersistence:       true,
+				storageframework.CapFsGroup:           true,
+				storageframework.CapBlock:             true,
+				storageframework.CapExec:              true,
+				storageframework.CapMultiPODs:         true,
+				storageframework.CapMultiplePVsSameID: true,
+			},
+		},
+	}
+}
+
+func (r *rbdDriver) GetDriverInfo() *storageframework.DriverInfo {
+	return &r.driverInfo
+}
+
+func (r *rbdDriver) SkipUnsupportedTest(pattern storageframework.TestPattern) {
+}
+
+func (r *rbdDriver) GetVolumeSource(readOnly bool, fsType string, e2evolume storageframework.TestVolume) *v1.VolumeSource {
+	rv, ok := e2evolume.(*rbdVolume)
+	if !ok {
+		framework.Failf("failed to cast test volume of type %T to the RBD test volume", e2evolume)
+	}
+
+	volSource := v1.VolumeSource{
+		RBD: &v1.RBDVolumeSource{
+			CephMonitors: []string{rv.serverIP},
+			RBDPool:      "rbd",
+			RBDImage:     "foo",
+			RadosUser:    "admin",
+			SecretRef: &v1.LocalObjectReference{
+				Name: rv.secret.Name,
+			},
+			ReadOnly: readOnly,
+		},
+	}
+	if fsType != "" {
+		volSource.RBD.FSType = fsType
+	}
+	return &volSource
+}
+
+func (r *rbdDriver) GetPersistentVolumeSource(readOnly bool, fsType string, e2evolume storageframework.TestVolume) (*v1.PersistentVolumeSource, *v1.VolumeNodeAffinity) {
+	rv, ok := e2evolume.(*rbdVolume)
+	if !ok {
+		framework.Failf("failed to cast test volume of type %T to the RBD test volume", e2evolume)
+	}
+
+	f := rv.f
+	ns := f.Namespace
+
+	pvSource := v1.PersistentVolumeSource{
+		RBD: &v1.RBDPersistentVolumeSource{
+			CephMonitors: []string{rv.serverIP},
+			RBDPool:      "rbd",
+			RBDImage:     "foo",
+			RadosUser:    "admin",
+			SecretRef: &v1.SecretReference{
+				Name:      rv.secret.Name,
+				Namespace: ns.Name,
+			},
+			ReadOnly: readOnly,
+		},
+	}
+	if fsType != "" {
+		pvSource.RBD.FSType = fsType
+	}
+	return &pvSource, nil
+}
+
+func (r *rbdDriver) PrepareTest(ctx context.Context, f *framework.Framework) *storageframework.PerTestConfig {
+	return &storageframework.PerTestConfig{
+		Driver:    r,
+		Prefix:    "rbd",
+		Framework: f,
+	}
+}
+
+func (r *rbdDriver) CreateVolume(ctx context.Context, config *storageframework.PerTestConfig, volType storageframework.TestVolType) storageframework.TestVolume {
+	f := config.Framework
+	cs := f.ClientSet
+	ns := f.Namespace
+
+	c, serverPod, secret, serverIP := newRBDServer(ctx, cs, ns.Name)
+	config.ServerConfig = &c
+	return &rbdVolume{
+		serverPod: serverPod,
+		serverIP:  serverIP,
+		secret:    secret,
+		f:         f,
+	}
+}
+
+func (v *rbdVolume) DeleteVolume(ctx context.Context) {
+	cleanUpVolumeServerWithSecret(ctx, v.f, v.serverPod, v.secret)
+}
+
+// newRBDServer is a CephRBD-specific wrapper for CreateStorageServer.
+func newRBDServer(ctx context.Context, cs clientset.Interface, namespace string) (config e2evolume.TestConfig, pod *v1.Pod, secret *v1.Secret, ip string) {
+	config = e2evolume.TestConfig{
+		Namespace:   namespace,
+		Prefix:      "rbd",
+		ServerImage: imageutils.GetE2EImage(imageutils.VolumeRBDServer),
+		ServerPorts: []int{6789},
+		ServerVolumes: map[string]string{
+			"/lib/modules": "/lib/modules",
+		},
+		ServerReadyMessage: "Ceph is ready",
+	}
+	pod, ip = e2evolume.CreateStorageServer(ctx, cs, config)
+	// create secrets for the server
+	secret = &v1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: config.Prefix + "-secret",
+		},
+		Data: map[string][]byte{
+			// from test/images/volumes-tester/rbd/keyring
+			"key": []byte("AQDRrKNVbEevChAAEmRC+pW/KBVHxa0w/POILA=="),
+		},
+		Type: "kubernetes.io/rbd",
+	}
+
+	secret, err := cs.CoreV1().Secrets(config.Namespace).Create(ctx, secret, metav1.CreateOptions{})
+	if err != nil {
+		framework.Failf("Failed to create secrets for Ceph RBD: %v", err)
+	}
+
+	return config, pod, secret, ip
+}

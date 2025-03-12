@@ -39,8 +39,8 @@ func TestIsMigratable(t *testing.T) {
 		spec                 *volume.Spec
 	}{
 		{
-			name:                 "Portworx PV source with CSIMigrationPortworx enabled",
-			pluginFeature:        features.CSIMigrationPortworx,
+			name:                 "RBD PV source with CSIMigrationGCE enabled",
+			pluginFeature:        features.CSIMigrationRBD,
 			pluginFeatureEnabled: true,
 			isMigratable:         true,
 			csiMigrationEnabled:  true,
@@ -48,8 +48,8 @@ func TestIsMigratable(t *testing.T) {
 				PersistentVolume: &v1.PersistentVolume{
 					Spec: v1.PersistentVolumeSpec{
 						PersistentVolumeSource: v1.PersistentVolumeSource{
-							PortworxVolume: &v1.PortworxVolumeSource{
-								VolumeID: "test-volume",
+							RBD: &v1.RBDPersistentVolumeSource{
+								RBDImage: "test-disk",
 							},
 						},
 					},
@@ -57,8 +57,8 @@ func TestIsMigratable(t *testing.T) {
 			},
 		},
 		{
-			name:                 "Portworx PD PV Source with CSIMigrationPortworx disabled",
-			pluginFeature:        features.CSIMigrationPortworx,
+			name:                 "RBD PD PV Source with CSIMigrationGCE disabled",
+			pluginFeature:        features.CSIMigrationRBD,
 			pluginFeatureEnabled: false,
 			isMigratable:         false,
 			csiMigrationEnabled:  true,
@@ -66,8 +66,8 @@ func TestIsMigratable(t *testing.T) {
 				PersistentVolume: &v1.PersistentVolume{
 					Spec: v1.PersistentVolumeSpec{
 						PersistentVolumeSource: v1.PersistentVolumeSource{
-							PortworxVolume: &v1.PortworxVolumeSource{
-								VolumeID: "test-volume",
+							RBD: &v1.RBDPersistentVolumeSource{
+								RBDImage: "test-disk",
 							},
 						},
 					},

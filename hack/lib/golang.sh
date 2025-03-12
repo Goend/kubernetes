@@ -325,6 +325,7 @@ readonly KUBE_STATIC_BINARIES=(
   kube-proxy
   kube-log-runner
   kubeadm
+  kubelet
   kubectl
   kubectl-convert
   kubemark

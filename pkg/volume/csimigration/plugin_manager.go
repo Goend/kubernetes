@@ -75,6 +75,8 @@ func (pm PluginManager) IsMigrationCompleteForPlugin(pluginName string) bool {
 		return true
 	case csilibplugins.PortworxVolumePluginName:
 		return pm.featureGate.Enabled(features.InTreePluginPortworxUnregister)
+	case csilibplugins.RBDVolumePluginName:
+		return pm.featureGate.Enabled(features.InTreePluginRBDUnregister)
 	default:
 		return false
 	}
@@ -101,6 +103,8 @@ func (pm PluginManager) IsMigrationEnabledForPlugin(pluginName string) bool {
 		return true
 	case csilibplugins.PortworxVolumePluginName:
 		return pm.featureGate.Enabled(features.CSIMigrationPortworx)
+	case csilibplugins.RBDVolumePluginName:
+		return pm.featureGate.Enabled(features.CSIMigrationRBD)
 	default:
 		return false
 	}
