@@ -69,6 +69,9 @@ type RuntimeHelper interface {
 
 	// SetPodWatchCondition flags a pod to be inspected until the condition is met.
 	SetPodWatchCondition(types.UID, string, func(*PodStatus) bool)
+
+	// SkipContainerHash skip hash calculation
+	SkipContainerHash() bool
 }
 
 // ShouldContainerBeRestarted checks whether a container needs to be restarted.

@@ -530,8 +530,11 @@ func (p podActions) String() string {
 // Currently, there are only `image` and `name` fields.
 // we don't need to consider the pod UID here, because we find the containerStatus through the pod UID.
 // If the pod UID changes, we will not be able to find the containerStatus to compare against.
-func containerChanged(container *v1.Container, containerStatus *kubecontainer.Status) (uint64, uint64, bool) {
+func containerChanged(container *v1.Container, containerStatus *kubecontainer.Status, skipfn func() bool) (uint64, uint64, bool) {
 	expectedHash := kubecontainer.HashContainer(container)
+	if skipfn != nil && skipfn() {
+		return expectedHash, containerStatus.Hash, false
+	}
 	return expectedHash, containerStatus.Hash, containerStatus.Hash != expectedHash
 }
 
@@ -1055,7 +1058,7 @@ func (m *kubeGenericRuntimeManager) computePodActions(ctx context.Context, pod *
 		var message string
 		var reason containerKillReason
 		restart := shouldRestartOnFailure(pod)
-		if _, _, changed := containerChanged(&container, containerStatus); changed {
+		if _, _, changed := containerChanged(&container, containerStatus, m.runtimeHelper.SkipContainerHash); changed {
 			message = fmt.Sprintf("Container %s definition changed", container.Name)
 			// Restart regardless of the restart policy because the container
 			// spec changed.

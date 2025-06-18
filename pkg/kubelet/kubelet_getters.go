@@ -140,6 +140,18 @@ func (kl *Kubelet) GetMaxPods() int {
 	return kl.maxPods
 }
 
+func (kl *Kubelet) SkipContainerHash() bool {
+	_, err := os.Stat(filepath.Join(kl.getRootDir(), "skiphash.lock"))
+	if err == nil {
+		return true
+	}
+	if os.IsNotExist(err) {
+		return false
+	}
+	klog.Errorf("Error checking file %s: %v", filepath.Join(kl.getPodsDir(), "skiphash.lock"), err)
+	return false
+}
+
 // getPodDir returns the full path to the per-pod directory for the pod with
 // the given UID.
 func (kl *Kubelet) getPodDir(podUID types.UID) string {

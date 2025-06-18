@@ -40,6 +40,8 @@ type FakeRuntimeHelper struct {
 	Err             error
 }
 
+func (f *FakeRuntimeHelper) SkipContainerHash() bool { return false }
+
 func (f *FakeRuntimeHelper) GenerateRunContainerOptions(_ context.Context, pod *v1.Pod, container *v1.Container, podIP string, podIPs []string, imageVolumes kubecontainer.ImageVolumes) (*kubecontainer.RunContainerOptions, func(), error) {
 	var opts kubecontainer.RunContainerOptions
 	if len(container.TerminationMessagePath) != 0 {

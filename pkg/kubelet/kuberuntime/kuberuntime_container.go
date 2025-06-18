@@ -1128,7 +1128,7 @@ func (m *kubeGenericRuntimeManager) computeInitContainerActions(pod *v1.Pod, pod
 				}
 
 				// Restart running sidecar containers which have had their definition changed.
-				if _, _, changed := containerChanged(container, status); changed {
+				if _, _, changed := containerChanged(container, status, m.runtimeHelper.SkipContainerHash); changed {
 					changes.ContainersToKill[status.ID] = containerToKillInfo{
 						name:      container.Name,
 						container: container,
