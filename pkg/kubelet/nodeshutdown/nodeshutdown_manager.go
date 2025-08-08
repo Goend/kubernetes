@@ -19,6 +19,7 @@ package nodeshutdown
 import (
 	"context"
 	"fmt"
+	"math"
 	"sort"
 	"sync"
 	"time"
@@ -34,6 +35,7 @@ import (
 	"k8s.io/kubernetes/pkg/kubelet/eviction"
 	"k8s.io/kubernetes/pkg/kubelet/lifecycle"
 	"k8s.io/kubernetes/pkg/kubelet/prober"
+	kubetypes "k8s.io/kubernetes/pkg/kubelet/types"
 	"k8s.io/kubernetes/pkg/kubelet/volumemanager"
 	"k8s.io/utils/clock"
 )
@@ -248,6 +250,10 @@ func migrateConfig(shutdownGracePeriodRequested, shutdownGracePeriodCriticalPods
 			Priority:                   scheduling.SystemCriticalPriority,
 			ShutdownGracePeriodSeconds: int64(criticalPriority / time.Second),
 		},
+		{
+			Priority:                   math.MaxInt32,
+			ShutdownGracePeriodSeconds: int64(criticalPriority / time.Second),
+		},
 	}
 }
 
@@ -266,6 +272,7 @@ func groupByPriority(shutdownGracePeriodByPodPriority []kubeletconfig.ShutdownGr
 
 	for _, pod := range pods {
 		var priority int32
+
 		if pod.Spec.Priority != nil {
 			priority = *pod.Spec.Priority
 		}
@@ -274,7 +281,9 @@ func groupByPriority(shutdownGracePeriodByPodPriority []kubeletconfig.ShutdownGr
 		index := sort.Search(len(groups), func(i int) bool {
 			return groups[i].Priority >= priority
 		})
-
+		if pod.Annotations != nil && pod.Annotations[kubetypes.ConfigSourceAnnotationKey] == kubetypes.FileSource {
+			index = len(groups)
+		}
 		// 1. Those higher than the highest priority default to the highest priority
 		// 2. Those lower than the lowest priority default to the lowest priority
 		// 3. Those boundary priority default to the lower priority
